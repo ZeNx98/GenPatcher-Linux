@@ -33,7 +33,7 @@ The graphical user interface is built on PyGObject (GTK 3). Install the necessar
   ```
 
 ### 2. Proton / Wine Compatibility Helpers
-* **Protontricks**: Required to configure DLL overrides within the Proton prefix (directing the environment to load native community Direct3D wrapper DLLs). Install it using one of the following commands:
+* **Protontricks**: Required to configure DLL overrides within the Proton prefix (directing the environment to load native community Direct3D wrapper DLLs). GenPatcher auto-detects Flatpak or a native `protontricks` binary (Flatpak is preferred when both are installed). Install it using one of the following commands:
 
   * **Arch Linux / Manjaro / CachyOS**:
     ```bash
@@ -54,20 +54,44 @@ The graphical user interface is built on PyGObject (GTK 3). Install the necessar
 ---
 
 
-## Installation & Setup
+## Usage
+
+
+### Download AppImage
+
+Download the latest AppImage from the [releases page](https://github.com/Fennek88/GenPatcher-Linux/releases).
+Browsers download it without the executable permission, so make it executable first:
+right-click the file → Properties → Permissions → "Allow executing as program", or run:
+
+```bash
+chmod +x GenPatcher-Linux-x86_64.AppImage
+```
+
+Then double-click the AppImage to run it.
+
+
+### Clone repository and run Python app
 
 To clone and run the application:
 
 ```bash
-git clone https://github.com/ZeNx98/GenPatcher-Linux.git
+git clone https://github.com/Fennek88/GenPatcher-Linux
 cd GenPatcher-Linux
 python3 GenPatcher.py
 ```
 
 ---
 
+
+## Updates
+
+From version 1.0.3 the application has a built in self-update-function that checks for new releases and updates itself automatically or on request.
+
+---
+
+
 ## Screenshots
 
-![Screenshot 1](Images/Screenshots/screenshot%201.png)
+![Screenshot](Images/Screenshots/screenshot1.png)
 
-![Screenshot 2](Images/Screenshots/screenshot%202.png)
+![Screenshot 2](Images/Screenshots/screenshot2.png)

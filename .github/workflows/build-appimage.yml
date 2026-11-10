@@ -1,0 +1,101 @@
+name: Build AppImage
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*"
+      - "[0-9]*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install build and runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            desktop-file-utils \
+            gir1.2-gtk-3.0 \
+            python3 \
+            python3-gi \
+            python3-gi-cairo \
+            squashfs-tools \
+            xvfb
+
+      - name: Download appimagetool
+        run: |
+          curl --fail --location --retry 3 \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage \
+            --output "$RUNNER_TEMP/appimagetool"
+          chmod +x "$RUNNER_TEMP/appimagetool"
+
+      - name: Build AppImage
+        run: APPIMAGETOOL="$RUNNER_TEMP/appimagetool" ./packaging/build-appimage.sh
+
+      - name: Smoke-test AppImage
+        run: |
+          set +e
+          timeout --signal=TERM --kill-after=5s 10s \
+            xvfb-run -a env APPIMAGE_EXTRACT_AND_RUN=1 \
+            ./dist/GenPatcher-Linux-x86_64.AppImage \
+            > "$RUNNER_TEMP/appimage-smoke-test.log" 2>&1
+          status=$?
+          set -e
+          cat "$RUNNER_TEMP/appimage-smoke-test.log"
+          if [ "$status" -ne 124 ]; then
+            echo "AppImage exited unexpectedly with status $status" >&2
+            exit 1
+          fi
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v6
+        with:
+          name: GenPatcher-Linux-x86_64-AppImage
+          path: dist/GenPatcher-Linux-x86_64.AppImage
+          if-no-files-found: error
+          retention-days: 14
+
+  # Runs only when a version tag is pushed; normal pushes and PRs just build.
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Verify tag matches in-app version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          app_version="$(sed -n 's/^version = "\(.*\)"/\1/p' GenPatcher.py)"
+          if [ "$tag" != "$app_version" ]; then
+            echo "Tag '$GITHUB_REF_NAME' does not match version '$app_version' in GenPatcher.py" >&2
+            exit 1
+          fi
+
+      - name: Download AppImage artifact
+        uses: actions/download-artifact@v6
+        with:
+          name: GenPatcher-Linux-x86_64-AppImage
+
+      - name: Create checksum
+        run: sha256sum GenPatcher-Linux-x86_64.AppImage > GenPatcher-Linux-x86_64.AppImage.sha256
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            GenPatcher-Linux-x86_64.AppImage
+            GenPatcher-Linux-x86_64.AppImage.sha256

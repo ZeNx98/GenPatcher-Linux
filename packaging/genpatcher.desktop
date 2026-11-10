@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=GenPatcher Linux
+Comment=Configure and patch Command & Conquer: Generals and Zero Hour
+Exec=AppRun
+Icon=genpatcher
+Terminal=false
+Type=Application
+Categories=Game;
+StartupNotify=true
